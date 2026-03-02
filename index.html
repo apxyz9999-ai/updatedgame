@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Crystal Miner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --crystal-primary: #00f7ff;
+            --crystal-secondary: #ff00ff;
+            --crystal-tertiary: #ffff00;
+            --bg-dark: #0a0a1a;
+            --bg-panel: rgba(20, 20, 40, 0.95);
+            --glow-cyan: 0 0 20px #00f7ff, 0 0 40px #00f7ff;
+            --glow-magenta: 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+            --nav-height: 60px;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg-dark);
+            color: white;
+        }
+
+        /* Animated Background */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(0, 247, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(255, 0, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 255, 0, 0.08) 0%, transparent 60%),
+                linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+        }
+
+        .floating-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(1px);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 247, 255, 0.3) 0%, transparent 70%);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 0, 255, 0.25) 0%, transparent 70%);
+            top: 60%;
+            right: 10%;
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(255, 255, 0, 0.2) 0%, transparent 70%);
+            bottom: 20%;
+            left: 30%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.1); }
+            50% { transform: translate(-20px, 20px) scale(0.9); }
+            75% { transform: translate(20px, 30px) scale(1.05); }
+        }
+
+        /* Main Container */
+        .game-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        /* Top Stats Bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid rgba(0, 247, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .level-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.2), rgba(255, 0, 255, 0.2));
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--crystal-primary);
+        }
+
+        .level-icon {
+            font-size: 1.2rem;
+        }
+
+        .level-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--crystal-primary);
+        }
+
+        .xp-bar-container {
+            flex: 1;
+            max-width: 150px;
+            margin: 0 10px;
+        }
+
+        .xp-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--crystal-primary), var(--crystal-tertiary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--crystal-primary);
+        }
+
+        .xp-text {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .total-crystals {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--crystal-secondary);
+        }
+
+        /* Main Content Area */
+        .content-area {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Tab Panels */
+        .tab-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-panel.active {
+            display: flex;
+        }
+
+        /* Lobby Tab (Crystal Mining) */
+        #lobby-panel {
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stats-display {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .crystal-count {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--crystal-primary), var(--crystal-secondary), var(--crystal-tertiary));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .crystal-label {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .cps-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            color: var(--crystal-primary);
+            margin-top: 8px;
+        }
+
+        /* The Crystal */
+        .crystal-wrapper {
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .crystal-wrapper:active {
+            transform: scale(0.95);
+        }
+
+        .crystal {
+            width: 150px;
+            height: 210px;
+            position: relative;
+            filter: drop-shadow(0 0 30px var(--crystal-primary)) drop-shadow(0 0 60px var(--crystal-secondary));
+            animation: crystalPulse 2s ease-in-out infinite;
+            transition: filter 0.3s ease;
+        }
+
+        .crystal:hover {
+            filter: drop-shadow(0 0 50px var(--crystal-primary)) drop-shadow(0 0 80px var(--crystal-secondary));
+        }
+
+        @keyframes crystalPulse {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg);
+                filter: drop-shadow(0 0 30px var(--crystal-primary)) drop-shadow(0 0 60px var(--crystal-secondary));
+            }
+            50% { 
+                transform: scale(1.05) rotate(2deg);
+                filter: drop-shadow(0 0 50px var(--crystal-primary)) drop-shadow(0 0 80px var(--crystal-secondary));
+            }
+        }
+
+        .crystal svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .crystal-shine {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.3) 30%, 
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 70%,
+                transparent 100%);
+            animation: shine 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        .multiplier-display {
+            margin-top: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            color: var(--crystal-tertiary);
+            text-shadow: 0 0 15px var(--crystal-tertiary);
+        }
+
+        /* Click Ring Effect */
+        .click-ring {
+            position: absolute;
+            border: 2px solid var(--crystal-primary);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: clickRing 0.6s ease-out forwards;
+        }
+
+        @keyframes clickRing {
+            0% {
+                width: 80px;
+                height: 80px;
+                opacity: 1;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            100% {
+                width: 250px;
+                height: 250px;
+                opacity: 0;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        /* Floating Numbers */
+        .float-number {
+            position: absolute;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow: 0 0 10px currentColor;
+            z-index: 100;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-80px) scale(1.5);
+            }
+        }
+
+        /* Particles Canvas */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Upgrades Panel */
+        .upgrades-panel {
+            background: var(--bg-panel);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 247, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--crystal-primary);
+            text-shadow: var(--glow-cyan);
+            letter-spacing: 2px;
+        }
+
+        .upgrades-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .upgrades-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .upgrades-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        .upgrades-list::-webkit-scrollbar-thumb {
+            background: var(--crystal-primary);
+            border-radius: 2px;
+        }
+
+        .upgrade-item {
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%);
+            border: 1px solid rgba(0, 247, 255, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .upgrade-item:active {
+            transform: scale(0.98);
+        }
+
+        .upgrade-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .upgrade-item:hover::before {
+            left: 100%;
+        }
+
+        .upgrade-item:hover {
+            border-color: var(--crystal-primary);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .upgrade-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upgrade-item.disabled:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: rgba(0, 247, 255, 0.3);
+        }
+
+        .upgrade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .upgrade-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .upgrade-level {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: var(--crystal-tertiary);
+            background: rgba(255, 255, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        .upgrade-desc {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 6px;
+        }
+
+        .upgrade-cost {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--crystal-secondary);
+        }
+
+        .upgrade-cost-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Achievements Panel */
+        .achievements-panel {
+            background: var(--bg-panel);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .achievements-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .achievement {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .achievement.unlocked {
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.2) 0%, rgba(255, 255, 0, 0.2) 100%);
+            border: 1px solid rgba(255, 255, 0, 0.5);
+        }
+
+        .achievement-icon {
+            font-size: 1.8rem;
+            filter: grayscale(1);
+            opacity: 0.5;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .achievement.unlocked .achievement-icon {
+            filter: grayscale(0);
+            opacity: 1;
+            animation: achievementPop 0.5s ease;
+        }
+
+        @keyframes achievementPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .achievement-text {
+            font-size: 0.8rem;
+            flex: 1;
+        }
+
+        .achievement-name {
+            font-weight: 700;
+            color: white;
+        }
+
+        .achievement.unlocked .achievement-name {
+            color: var(--crystal-tertiary);
+        }
+
+        .achievement-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: var(--bg-panel);
+            border-top: 1px solid rgba(0, 247, 255, 0.2);
+            padding: 8px 0;
+            flex-shrink: 0;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 20px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 70px;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nav-btn.active {
+            color: var(--crystal-primary);
+        }
+
+        .nav-btn.active .nav-icon {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 10px var(--crystal-primary));
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 2px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-label {
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Level Up Notification */
+        .level-up-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.95), rgba(255, 0, 255, 0.95));
+            color: black;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            text-align: center;
+            z-index: 1000;
+            animation: levelUpPop 0.5s ease, levelUpFade 0.5s ease 2s forwards;
+            box-shadow: 0 0 50px var(--crystal-primary);
+        }
+
+        @keyframes levelUpPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @keyframes levelUpFade {
+            to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        /* Achievement Notification */
+        .achievement-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, rgba(255,255,0,0.95), rgba(255,0,255,0.95));
+            color: black;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+            box-shadow: 0 0 30px rgba(255,255,0,0.5);
+            text-align: center;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Desktop Styles */
+        @media (min-width: 900px) {
+            :root {
+                --nav-height: 70px;
+            }
+
+            .game-container {
+                flex-direction: row;
+                padding: 20px;
+                gap: 20px;
+                height: 100vh;
+            }
+
+            .top-bar {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                right: 20px;
+                border-radius: 15px;
+                padding: 12px 25px;
+                z-index: 100;
+            }
+
+            .content-area {
+                flex: 1;
+                display: grid;
+                grid-template-columns: 1fr 400px;
+                gap: 20px;
+                max-width: 1400px;
+                margin: 0 auto;
+                width: 100%;
+                padding-top: 80px;
+            }
+
+            .tab-panel {
+                position: relative;
+                display: flex !important;
+                background: var(--bg-panel);
+                border-radius: 20px;
+                border: 1px solid rgba(0, 247, 255, 0.3);
+                overflow: hidden;
+            }
+
+            .tab-panel.active {
+                display: flex !important;
+            }
+
+            #lobby-panel {
+                padding: 40px;
+            }
+
+            .crystal-count {
+                font-size: 4rem;
+            }
+
+            .crystal {
+                width: 220px;
+                height: 308px;
+            }
+
+            .cps-display {
+                font-size: 1.2rem;
+            }
+
+            .multiplier-display {
+                font-size: 1.3rem;
+            }
+
+            .bottom-nav {
+                display: none;
+            }
+
+            .panel-header {
+                padding: 20px;
+            }
+
+            .panel-title {
+                font-size: 1.5rem;
+            }
+
+            .upgrade-item {
+                padding: 15px;
+            }
+
+            .upgrade-name {
+                font-size: 1rem;
+            }
+
+            .upgrade-desc {
+                font-size: 0.85rem;
+            }
+
+            .achievement {
+                padding: 15px;
+            }
+
+            .achievement-icon {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-container">
+        <div class="floating-orb orb-1"></div>
+        <div class="floating-orb orb-2"></div>
+        <div class="floating-orb orb-3"></div>
+    </div>
+
+    <canvas id="particles-canvas"></canvas>
+
+    <div class="game-container">
+        <!-- Top Stats Bar -->
+        <div class="top-bar">
+            <div class="level-badge">
+                <span class="level-icon">⭐</span>
+                <span class="level-text" id="level-text">Lv.1</span>
+            </div>
+            <div class="xp-bar-container">
+                <div class="xp-bar">
+                    <div class="xp-fill" id="xp-fill" style="width: 0%"></div>
+                </div>
+                <div class="xp-text" id="xp-text">0 / 100 XP</div>
+            </div>
+            <div class="total-crystals" id="total-crystals">0 💎</div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            <!-- Lobby Tab -->
+            <div class="tab-panel active" id="lobby-panel">
+                <div class="stats-display">
+                    <div class="crystal-count" id="crystal-count">0</div>
+                    <div class="crystal-label">Crystals</div>
+                    <div class="cps-display" id="cps-display">+0 per second</div>
+                </div>
+
+                <div class="crystal-wrapper" id="crystal-wrapper">
+                    <div class="crystal" id="crystal">
+                        <svg viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="crystalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#00f7ff;stop-opacity:1" />
+                                    <stop offset="30%" style="stop-color:#00d4ff;stop-opacity:1" />
+                                    <stop offset="50%" style="stop-color:#ffffff;stop-opacity:0.8" />
+                                    <stop offset="70%" style="stop-color:#ff00ff;stop-opacity:0.8" />
+                                    <stop offset="100%" style="stop-color:#00f7ff;stop-opacity:1" />
+                                </linearGradient>
+                                <linearGradient id="crystalGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#ff00ff;stop-opacity:0.6" />
+                                    <stop offset="50%" style="stop-color:#00f7ff;stop-opacity:0.4" />
+                                    <stop offset="100%" style="stop-color:#ffff00;stop-opacity:0.6" />
+                                </linearGradient>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <polygon points="50,0 80,30 70,100 50,140 30,100 20,30" fill="url(#crystalGrad)" filter="url(#glow)"/>
+                            <polygon points="50,0 50,140 70,100" fill="url(#crystalGrad2)" opacity="0.5"/>
+                            <polygon points="50,0 80,30 50,60 20,30" fill="rgba(255,255,255,0.3)" />
+                            <polygon points="20,30 50,60 30,100" fill="rgba(0,247,255,0.3)" />
+                            <polygon points="80,30 70,100 50,60" fill="rgba(255,0,255,0.3)" />
+                            <polygon points="30,100 50,140 50,60 70,100" fill="rgba(255,255,0,0.2)" />
+                            <polygon points="35,20 45,25 40,50 30,45" fill="rgba(255,255,255,0.6)" />
+                        </svg>
+                        <div class="crystal-shine"></div>
+                    </div>
+                </div>
+
+                <div class="multiplier-display" id="multiplier-display">Click Power: x1</div>
+            </div>
+
+            <!-- Upgrades Tab -->
+            <div class="tab-panel" id="upgrades-panel">
+                <div class="upgrades-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">⚡ UPGRADES ⚡</div>
+                    </div>
+                    <div class="upgrades-list" id="upgrades-list"></div>
+                </div>
+            </div>
+
+            <!-- Achievements Tab -->
+            <div class="tab-panel" id="achievements-panel">
+                <div class="achievements-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">🏆 ACHIEVEMENTS 🏆</div>
+                    </div>
+                    <div class="achievements-list" id="achievements-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-btn active" data-tab="lobby">
+                <span class="nav-icon">💎</span>
+                <span class="nav-label">LOBBY</span>
+            </button>
+            <button class="nav-btn" data-tab="upgrades">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-label">UPGRADES</span>
+            </button>
+            <button class="nav-btn" data-tab="achievements">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">ACHIEVEMENTS</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const game = {
+            crystals: 0,
+            totalCrystals: 0,
+            clickPower: 1,
+            autoCPS: 0,
+            multiplier: 1,
+            clickCount: 0,
+            level: 1,
+            xp: 0,
+            xpToLevel: 100,
+            upgrades: {},
+            achievements: {}
+        };
+
+        // Level up bonus
+        const levelBonus = {
+            clickPower: 0,
+            autoCPS: 0,
+            multiplier: 1
+        };
+
+        // Upgrade Definitions
+        const upgradesData = [
+            { id: 'pickaxe', name: 'Diamond Pickaxe', desc: '+1 crystal per click', baseCost: 15, costMult: 1.5, effect: () => { game.clickPower += 1; }, icon: '⛏️' },
+            { id: 'auto_miner', name: 'Auto Miner', desc: '+1 crystal per second', baseCost: 50, costMult: 1.4, effect: () => { game.autoCPS += 1; }, icon: '🤖' },
+            { id: 'crystal_boost', name: 'Crystal Boost', desc: '+50% click power', baseCost: 200, costMult: 2, effect: () => { game.clickPower = Math.floor(game.clickPower * 1.5); }, icon: '💎' },
+            { id: 'drill', name: 'Laser Drill', desc: '+5 crystals per second', baseCost: 500, costMult: 1.5, effect: () => { game.autoCPS += 5; }, icon: '🔧' },
+            { id: 'amplifier', name: 'Power Amplifier', desc: '2x all crystal gains', baseCost: 2000, costMult: 2.5, effect: () => { game.multiplier *= 2; levelBonus.multiplier *= 2; }, icon: '⚡' },
+            { id: 'factory', name: 'Crystal Factory', desc: '+25 crystals per second', baseCost: 5000, costMult: 1.6, effect: () => { game.autoCPS += 25; }, icon: '🏭' },
+            { id: 'quantum', name: 'Quantum Miner', desc: '+100 crystals per second', baseCost: 25000, costMult: 1.8, effect: () => { game.autoCPS += 100; }, icon: '⚛️' },
+            { id: 'dimension', name: 'Dimensional Rift', desc: '5x all crystal gains', baseCost: 100000, costMult: 3, effect: () => { game.multiplier *= 5; levelBonus.multiplier *= 5; }, icon: '🌀' }
+        ];
+
+        // Achievement Definitions
+        const achievementsData = [
+            { id: 'first_crystal', name: 'First Crystal', desc: 'Mine your first crystal', icon: '💠', check: () => game.totalCrystals >= 1 },
+            { id: 'hundred_club', name: 'Hundred Club', desc: 'Have 100 crystals', icon: '💯', check: () => game.crystals >= 100 },
+            { id: 'clicker', name: 'Clicker', desc: 'Click 100 times', icon: '👆', check: () => game.clickCount >= 100 },
+            { id: 'auto_miner_achievement', name: 'Automated', desc: 'Own 10 auto miners', icon: '🤖', check: () => (game.upgrades['auto_miner'] || 0) >= 10 },
+            { id: 'thousand_club', name: 'Thousand Club', desc: 'Have 1,000 crystals', icon: '🥉', check: () => game.crystals >= 1000 },
+            { id: 'ten_k', name: 'Big Earner', desc: 'Have 10,000 crystals', icon: '🥈', check: () => game.crystals >= 10000 },
+            { id: 'hundred_k', name: 'Crystal Tycoon', desc: 'Have 100,000 crystals', icon: '🥇', check: () => game.crystals >= 100000 },
+            { id: 'millionaire', name: 'Millionaire', desc: 'Have 1 million crystals', icon: '🤑', check: () => game.crystals >= 1000000 },
+            { id: 'overload', name: 'Overload', desc: 'Reach 1000x multiplier', icon: '🔥', check: () => game.multiplier >= 1000 },
+            { id: 'level_10', name: 'Rising Star', desc: 'Reach level 10', icon: '⭐', check: () => game.level >= 10 },
+            { id: 'level_25', name: 'Crystal Master', desc: 'Reach level 25', icon: '🌟', check: () => game.level >= 25 },
+            { id: 'level_50', name: 'Legend', desc: 'Reach level 50', icon: '👑', check: () => game.level >= 50 }
+        ];
+
+        // Tab Navigation
+        function setupTabNavigation() {
+            const navBtns = document.querySelectorAll('.nav-btn');
+            const panels = document.querySelectorAll('.tab-panel');
+
+            navBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+
+                    navBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    panels.forEach(panel => {
+                        panel.classList.remove('active');
+                        if (panel.id === tab + '-panel') {
+                            panel.classList.add('active');
+                        }
+                    });
+                });
+            });
+        }
+
+        // Initialize
+        function init() {
+            setupEventListeners();
+            setupTabNavigation();
+            renderUpgrades();
+            renderAchievements();
+            updateDisplay();
+            gameLoop();
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            const crystal = document.getElementById('crystal-wrapper');
+            
+            crystal.addEventListener('click', (e) => {
+                const earned = getClickPower();
+                game.crystals += earned;
+                game.totalCrystals += earned;
+                game.clickCount++;
+                
+                // Add XP
+                addXP(earned);
+                
+                createClickEffect(e);
+                createParticles(e.clientX, e.clientY);
+                createFloatingNumber(e.clientX, e.clientY, earned);
+                
+                updateDisplay();
+                checkAchievements();
+                updateUpgrades();
+            });
+
+            // Prevent double-tap zoom
+            crystal.addEventListener('touchend', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        // Get total click power with level bonus
+        function getClickPower() {
+            return (game.clickPower + levelBonus.clickPower) * game.multiplier * levelBonus.multiplier;
+        }
+
+        // Get total CPS with level bonus
+        function getCPS() {
+            return (game.autoCPS + levelBonus.autoCPS) * game.multiplier * levelBonus.multiplier;
+        }
+
+        // XP System
+        function addXP(amount) {
+            game.xp += amount;
+            
+            while (game.xp >= game.xpToLevel) {
+                game.xp -= game.xpToLevel;
+                levelUp();
+            }
+            
+            updateXPDisplay();
+        }
+
+        function levelUp() {
+            game.level++;
+            
+            // Level up bonuses
+            levelBonus.clickPower += Math.floor(game.level * 0.5);
+            levelBonus.autoCPS += Math.floor(game.level * 0.3);
+            
+            // Increase XP requirement
+            game.xpToLevel = Math.floor(100 * Math.pow(1.15, game.level - 1));
+            
+            // Show notification
+            showLevelUpNotification();
+            
+            // Check achievements
+            checkAchievements();
+            
+            updateDisplay();
+        }
+
+        function updateXPDisplay() {
+            const xpPercent = (game.xp / game.xpToLevel) * 100;
+            document.getElementById('xp-fill').style.width = xpPercent + '%';
+            document.getElementById('xp-text').textContent = formatNumber(Math.floor(game.xp)) + ' / ' + formatNumber(game.xpToLevel) + ' XP';
+            document.getElementById('level-text').textContent = 'Lv.' + game.level;
+        }
+
+        function showLevelUpNotification() {
+            const notif = document.createElement('div');
+            notif.className = 'level-up-notification';
+            notif.innerHTML = `🎉 LEVEL UP! 🎉<br><span style="font-size: 1rem;">You reached Level ${game.level}</span><br><span style="font-size: 0.8rem; opacity: 0.8;">+${Math.floor(game.level * 0.5)} Click Power<br>+${Math.floor(game.level * 0.3)} CPS</span>`;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => notif.remove(), 2500);
+        }
+
+        // Click Effect
+        function createClickEffect(e) {
+            const crystalArea = document.querySelector('.crystal-area') || document.getElementById('lobby-panel');
+            const rect = crystalArea.getBoundingClientRect();
+            
+            const ring = document.createElement('div');
+            ring.className = 'click-ring';
+            ring.style.left = (e.clientX - rect.left) + 'px';
+            ring.style.top = (e.clientY - rect.top) + 'px';
+            crystalArea.appendChild(ring);
+            
+            setTimeout(() => ring.remove(), 600);
+        }
+
+        // Floating Number
+        function createFloatingNumber(x, y, amount) {
+            const crystalArea = document.getElementById('lobby-panel');
+            const rect = crystalArea.getBoundingClientRect();
+            
+            const num = document.createElement('div');
+            num.className = 'float-number';
+            num.textContent = '+' + formatNumber(amount);
+            num.style.left = (x - rect.left - 30 + Math.random() * 60) + 'px';
+            num.style.top = (y - rect.top - 20) + 'px';
+            num.style.color = `hsl(${180 + Math.random() * 60}, 100%, 70%)`;
+            crystalArea.appendChild(num);
+            
+            setTimeout(() => num.remove(), 1000);
+        }
+
+        // Particles
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function createParticles(x, y) {
+            const colors = ['#00f7ff', '#ff00ff', '#ffff00', '#00ff00', '#ff6600'];
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15 - 5,
+                    size: Math.random() * 6 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1,
+                    decay: Math.random() * 0.02 + 0.02
+                });
+            }
+        }
+
+        function updateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles = particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3;
+                p.life -= p.decay;
+                
+                if (p.life <= 0) return false;
+                
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                
+                ctx.beginPath();
+                const spikes = 4;
+                const outerRadius = p.size;
+                const innerRadius = p.size / 2;
+                for (let i = 0; i < spikes * 2; i++) {
+                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                    const angle = (i * Math.PI) / spikes;
+                    const px = p.x + Math.cos(angle) * radius;
+                    const py = p.y + Math.sin(angle) * radius;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                
+                return true;
+            });
+            
+            requestAnimationFrame(updateParticles);
+        }
+        updateParticles();
+
+        // Update Display
+        function updateDisplay() {
+            document.getElementById('crystal-count').textContent = formatNumber(Math.floor(game.crystals));
+            document.getElementById('cps-display').textContent = `+${formatNumber(getCPS())} per second`;
+            document.getElementById('total-crystals').textContent = formatNumber(Math.floor(game.totalCrystals)) + ' 💎';
+            
+            const totalClickPower = getClickPower();
+            document.getElementById('multiplier-display').textContent = `Click Power: ${formatNumber(totalClickPower)}`;
+            
+            updateXPDisplay();
+        }
+
+        // Format Numbers
+        function formatNumber(num) {
+            if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+            return Math.floor(num).toString();
+        }
+
+        // Upgrades
+        function renderUpgrades() {
+            const list = document.getElementById('upgrades-list');
+            list.innerHTML = '';
+            
+            upgradesData.forEach(upgrade => {
+                const level = game.upgrades[upgrade.id] || 0;
+                const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costMult, level));
+                const canAfford = game.crystals >= cost;
+                
+                const item = document.createElement('div');
+                item.className = `upgrade-item ${canAfford ? '' : 'disabled'}`;
+                item.innerHTML = `
+                    <div class="upgrade-header">
+                        <span class="upgrade-name">${upgrade.icon} ${upgrade.name}</span>
+                        <span class="upgrade-level">Lv. ${level}</span>
+                    </div>
+                    <div class="upgrade-desc">${upgrade.desc}</div>
+                    <div class="upgrade-cost">
+                        <svg class="upgrade-cost-icon" viewBox="0 0 100 140">
+                            <polygon points="50,0 80,30 70,100 50,140 30,100 20,30" fill="#00f7ff"/>
+                        </svg>
+                        ${formatNumber(cost)}
+                    </div>
+                `;
+                
+                item.addEventListener('click', () => buyUpgrade(upgrade));
+                list.appendChild(item);
+            });
+        }
+
+        function buyUpgrade(upgrade) {
+            const level = game.upgrades[upgrade.id] || 0;
+            const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costMult, level));
+            
+            if (game.crystals >= cost) {
+                game.crystals -= cost;
+                game.upgrades[upgrade.id] = level + 1;
+                upgrade.effect();
+                updateDisplay();
+                renderUpgrades();
+                checkAchievements();
+            }
+        }
+
+        function updateUpgrades() {
+            const items = document.querySelectorAll('.upgrade-item');
+            items.forEach((item, index) => {
+                const upgrade = upgradesData[index];
+                const level = game.upgrades[upgrade.id] || 0;
+                const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costMult, level));
+                const canAfford = game.crystals >= cost;
+                
+                item.className = `upgrade-item ${canAfford ? '' : 'disabled'}`;
+            });
+        }
+
+        // Achievements
+        function renderAchievements() {
+            const list = document.getElementById('achievements-list');
+            list.innerHTML = '';
+            
+            achievementsData.forEach(achievement => {
+                const unlocked = game.achievements[achievement.id] || false;
+                
+                const item = document.createElement('div');
+                item.className = `achievement ${unlocked ? 'unlocked' : ''}`;
+                item.innerHTML = `
+                    <span class="achievement-icon">${achievement.icon}</span>
+                    <div class="achievement-text">
+                        <div class="achievement-name">${achievement.name}</div>
+                        <div class="achievement-desc">${achievement.desc}</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function checkAchievements() {
+            let changed = false;
+            achievementsData.forEach(achievement => {
+                if (!game.achievements[achievement.id] && achievement.check()) {
+                    game.achievements[achievement.id] = true;
+                    changed = true;
+                    showAchievementNotification(achievement);
+                }
+            });
+            
+            if (changed) renderAchievements();
+        }
+
+        function showAchievementNotification(achievement) {
+            const notif = document.createElement('div');
+            notif.className = 'achievement-notification';
+            notif.innerHTML = `🏆 Achievement Unlocked!<br><strong>${achievement.name}</strong>`;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => notif.remove(), 3000);
+        }
+
+        // Game Loop
+        function gameLoop() {
+            setInterval(() => {
+                if (game.autoCPS > 0) {
+                    const earned = getCPS() / 10;
+                    game.crystals += earned;
+                    game.totalCrystals += earned;
+                    addXP(earned * 0.1); // 10% of earned crystals as XP
+                    updateDisplay();
+                    updateUpgrades();
+                    checkAchievements();
+                }
+            }, 100);
+        }
+
+        // Start the game
+        init();
+    </script>
+</body>
+</html>
