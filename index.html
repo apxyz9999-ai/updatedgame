@@ -989,7 +989,11 @@
         function setupEventListeners() {
             const crystal = document.getElementById('crystal-wrapper');
             
-            crystal.addEventListener('click', (e) => {
+            // Handle both click and touch events for mobile
+            const handleCrystalClick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
                 const earned = getClickPower();
                 game.crystals += earned;
                 game.totalCrystals += earned;
@@ -998,19 +1002,27 @@
                 // Add XP
                 addXP(earned);
                 
-                createClickEffect(e);
-                createParticles(e.clientX, e.clientY);
-                createFloatingNumber(e.clientX, e.clientY, earned);
+                // Get position from touch or mouse
+                let clientX, clientY;
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                
+                createClickEffect({ clientX, clientY });
+                createParticles(clientX, clientY);
+                createFloatingNumber(clientX, clientY, earned);
                 
                 updateDisplay();
                 checkAchievements();
                 updateUpgrades();
-            });
-
-            // Prevent double-tap zoom
-            crystal.addEventListener('touchend', (e) => {
-                e.preventDefault();
-            });
+            };
+            
+            crystal.addEventListener('click', handleCrystalClick);
+            crystal.addEventListener('touchstart', handleCrystalClick, { passive: false });
         }
 
         // Get total click power with level bonus
@@ -1071,14 +1083,23 @@
         }
 
         // Click Effect
-        function createClickEffect(e) {
-            const crystalArea = document.querySelector('.crystal-area') || document.getElementById('lobby-panel');
+        function createClickEffect(eventOrCoords) {
+            const crystalArea = document.getElementById('lobby-panel');
             const rect = crystalArea.getBoundingClientRect();
+            
+            let x, y;
+            if (eventOrCoords.clientX !== undefined) {
+                x = eventOrCoords.clientX;
+                y = eventOrCoords.clientY;
+            } else {
+                x = eventOrCoords.x;
+                y = eventOrCoords.y;
+            }
             
             const ring = document.createElement('div');
             ring.className = 'click-ring';
-            ring.style.left = (e.clientX - rect.left) + 'px';
-            ring.style.top = (e.clientY - rect.top) + 'px';
+            ring.style.left = (x - rect.left) + 'px';
+            ring.style.top = (y - rect.top) + 'px';
             crystalArea.appendChild(ring);
             
             setTimeout(() => ring.remove(), 600);
